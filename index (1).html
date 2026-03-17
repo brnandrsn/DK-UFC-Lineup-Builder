@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MMA DraftKings Lineup Builder</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f9f8;color:#1a1a1a;font-size:14px}
+.app{display:flex;flex-direction:column;min-height:100vh;max-width:1200px;margin:0 auto;background:#fff;border-left:1px solid #e5e5e0;border-right:1px solid #e5e5e0}
+.header{padding:1rem 1.25rem 0.75rem;border-bottom:1px solid #e5e5e0;background:#fff}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.app-title{font-size:17px;font-weight:600;color:#1a1a1a}
+.app-sub{font-size:12px;color:#666;margin-top:2px}
+.cap-tag{font-size:11px;color:#999;background:#f1efe8;padding:3px 8px;border-radius:12px}
+.tabs-row{display:flex;border-bottom:1px solid #e5e5e0;overflow-x:auto;background:#fff}
+.tab{padding:0.65rem 1.1rem;font-size:13px;cursor:pointer;color:#666;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;white-space:nowrap;user-select:none}
+.tab:hover{color:#1a1a1a}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500}
+.main{display:flex;flex:1}
+.left-panel{width:305px;min-width:260px;border-right:1px solid #e5e5e0;display:flex;flex-direction:column;background:#fff}
+.right-panel{flex:1;display:flex;flex-direction:column;min-width:0;background:#fff}
+.phdr{padding:0.6rem 0.875rem;border-bottom:1px solid #e5e5e0;display:flex;align-items:center;justify-content:space-between}
+.ptitle{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.07em}
+.upload-zone{margin:0.6rem;border:1.5px dashed #d0d0c8;border-radius:8px;padding:0.7rem;text-align:center;cursor:pointer;transition:border-color 0.15s}
+.upload-zone:hover{border-color:#888}
+.search-row{display:flex;gap:5px;padding:0.45rem 0.6rem;border-bottom:1px solid #e5e5e0}
+.si{flex:1;font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #d0d0c8;background:#f9f9f8;color:#1a1a1a;outline:none}
+.si:focus{border-color:#888}
+.player-list{overflow-y:auto;flex:1}
+.prow{display:flex;align-items:center;gap:5px;padding:6px 0.6rem;border-bottom:1px solid #f0f0eb;cursor:pointer;transition:background 0.1s}
+.prow:hover{background:#f9f9f8}
+.prow.in-lineup{background:#eef4fd}
+.prow.locked{background:#edf7e8}
+.prow.excluded{background:#fff8ed;opacity:0.75}
+.prow.conflict{background:#fef0ef;opacity:0.6;cursor:not-allowed}
+.pbadge{font-size:10px;font-weight:600;padding:2px 5px;border-radius:4px;min-width:22px;text-align:center;flex-shrink:0;background:#fde8e8;color:#b53a3a}
+.pinfo{flex:1;min-width:0}
+.pname{font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmeta{font-size:11px;color:#888}
+.bsm{font-size:10px;padding:1px 4px;border-radius:3px;margin-left:3px;font-weight:500}
+.lkb{background:#edf7e8;color:#2d6a1f}
+.cfb{background:#fde8e8;color:#b53a3a}
+.exb{background:#fff3e0;color:#8a5200}
+.btn-icon{font-size:10px;padding:3px 6px;border-radius:4px;border:1px solid #d0d0c8;background:#fff;cursor:pointer;flex-shrink:0;white-space:nowrap;color:#555;transition:all 0.1s}
+.btn-icon:hover{background:#f1efe8}
+.btn-icon.lock-on{background:#edf7e8;border-color:#4a9e38;color:#2d6a1f;font-weight:500}
+.btn-icon.excl-on{background:#fff3e0;border-color:#c88a00;color:#8a5200;font-weight:500}
+.pon{display:flex;flex:1;flex-direction:column}
+.poff{display:none}
+.slots-wrap{flex:1;overflow-y:auto;padding:0.6rem;display:flex;flex-direction:column;gap:5px}
+.slot{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:1px solid #e5e5e0;background:#fff;min-height:42px}
+.slot-empty{font-size:12px;color:#bbb;flex:1}
+.slot-rm{font-size:13px;color:#bbb;cursor:pointer;padding:1px 4px;border-radius:3px;flex-shrink:0}
+.slot-rm:hover{color:#c0392b;background:#fde8e8}
+.footer{padding:0.65rem 0.875rem;border-top:1px solid #e5e5e0;display:flex;align-items:center;gap:10px;background:#fafaf8}
+.cap-wrap{flex:1}
+.cap-lbl{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:4px}
+.cap-bar{height:4px;background:#e5e5e0;border-radius:2px;overflow:hidden}
+.cap-fill{height:100%;border-radius:2px;transition:width 0.3s,background 0.3s}
+.proj-box{text-align:right;flex-shrink:0}
+.proj-lbl{font-size:10px;color:#aaa}
+.proj-val{font-size:17px;font-weight:600;color:#1a1a1a}
+.btn-sm{font-size:12px;padding:5px 12px;border-radius:7px;border:1px solid #d0d0c8;background:#fff;cursor:pointer;color:#1a1a1a;transition:all 0.1s}
+.btn-sm:hover{background:#f1efe8;border-color:#bbb}
+.btn-sm:disabled{opacity:0.4;cursor:default}
+.section{padding:0.75rem;border-bottom:1px solid #e5e5e0;display:flex;flex-direction:column;gap:8px}
+.section-title{font-size:12px;font-weight:600;color:#333}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lbl{font-size:12px;color:#555;min-width:110px}
+.num-input{font-size:13px;padding:5px 8px;border-radius:6px;border:1px solid #d0d0c8;background:#f9f9f8;color:#1a1a1a;width:78px;outline:none}
+.num-input:focus{border-color:#888}
+.trow{display:flex;align-items:center;gap:10px;padding:0.6rem 0.875rem;border-bottom:1px solid #e5e5e0;background:#fafaf8}
+.toggle{position:relative;width:32px;height:18px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tsl{position:absolute;cursor:pointer;inset:0;background:#c8c8c0;border-radius:18px;transition:background 0.2s}
+.tsl:before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle input:checked+.tsl{background:#2563eb}
+.toggle input:checked+.tsl:before{transform:translateX(14px)}
+.gen-btn{padding:7px 20px;border-radius:7px;border:none;background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+.gen-btn:hover{opacity:0.85}
+.gen-btn:disabled{opacity:0.4;cursor:default}
+.prog-row{padding:0.5rem 0.875rem;border-bottom:1px solid #e5e5e0;display:flex;align-items:center;gap:10px}
+.prog-bar{height:5px;background:#e5e5e0;border-radius:3px;overflow:hidden;flex:1}
+.prog-fill{height:100%;background:#2563eb;border-radius:3px;transition:width 0.2s}
+.gen-list{flex:1;overflow-y:auto}
+.grow{display:flex;align-items:center;gap:7px;padding:6px 0.875rem;border-bottom:1px solid #f0f0eb;cursor:pointer;transition:background 0.1s}
+.grow:hover{background:#f9f9f8}
+.grow.sel{background:#eef4fd}
+.gnum{font-size:11px;color:#aaa;min-width:24px}
+.gnames{flex:1;font-size:12px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gstats{font-size:11px;color:#888;flex-shrink:0;text-align:right}
+.bulk-footer{padding:0.6rem 0.875rem;border-top:1px solid #e5e5e0;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fafaf8}
+.exp-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:7px;border:none;background:#1a1a1a;color:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+.exp-btn:hover{opacity:0.85}
+.exp-btn:disabled{opacity:0.35;cursor:default}
+.exp-btn.ok{background:#2d6a1f}
+.locked-row{padding:0.45rem 0.875rem;border-bottom:1px solid #e5e5e0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:30px;background:#fafaf8}
+.lchip{font-size:11px;padding:2px 7px;border-radius:12px;background:#edf7e8;color:#2d6a1f;border:1px solid #9fcf91;white-space:nowrap}
+.cap-ok{background:#4a9e38}.cap-warn{background:#d4870a}.cap-over{background:#c0392b}
+.empty-state{padding:2rem 1rem;text-align:center;color:#bbb;font-size:12px}
+.slink{font-size:11px;color:#2563eb;cursor:pointer;text-decoration:none;background:none;border:none;padding:0}
+.slink:hover{text-decoration:underline}
+.mc{border:1px solid #e5e5e0;border-radius:7px;padding:7px 10px;display:flex;align-items:center;gap:8px;background:#fff}
+.mn{font-size:12px;font-weight:500;color:#1a1a1a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvs{font-size:11px;font-weight:600;color:#aaa;flex-shrink:0}
+.mrm{font-size:13px;color:#bbb;cursor:pointer;padding:1px 4px;border-radius:3px}
+.mrm:hover{color:#c0392b;background:#fde8e8}
+.mi{font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #d0d0c8;background:#f9f9f8;color:#1a1a1a;flex:1;min-width:65px;outline:none}
+.mi:focus{border-color:#888}
+.ai-status{font-size:11px;color:#666;min-height:16px}
+.ai-ok{color:#2d6a1f;font-weight:500}
+.ai-err{color:#c0392b}
+.rules-outer{overflow-y:auto;height:540px;padding:0.6rem;display:flex;flex-direction:column;gap:8px}
+.rule-card{border:1px solid #e5e5e0;border-radius:8px;background:#fff;flex-shrink:0}
+.rule-head{display:flex;align-items:center;gap:7px;padding:8px 10px;border-bottom:1px solid #e5e5e0;background:#fafaf8;border-radius:8px 8px 0 0}
+.rule-type-badge{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600}
+.rtb-basic{background:#dbeafe;color:#1d4ed8}
+.rtb-cond{background:#ede9fe;color:#5b21b6}
+.rule-body{padding:10px;display:flex;flex-direction:column;gap:9px}
+.rsel{font-size:12px;padding:5px 7px;border-radius:6px;border:1px solid #d0d0c8;background:#f9f9f8;color:#1a1a1a;outline:none}
+.rsel:focus{border-color:#888}
+.rnum{font-size:12px;padding:5px 6px;border-radius:6px;border:1px solid #d0d0c8;background:#f9f9f8;color:#1a1a1a;width:48px;outline:none}
+.rnum:focus{border-color:#888}
+.multi-select-wrap{border:1px solid #d0d0c8;border-radius:7px;overflow:hidden;background:#fff}
+.multi-select-scroll{height:130px;overflow-y:scroll}
+.ms-option{display:flex;align-items:center;gap:8px;padding:6px 9px;cursor:pointer;transition:background 0.1s;border-bottom:1px solid #f0f0eb}
+.ms-option:last-child{border-bottom:none}
+.ms-option:hover{background:#f9f9f8}
+.ms-option.ms-selected{background:#eef4fd}
+.ms-option.ms-selected-then{background:#fdf4ff}
+.ms-cb{width:14px;height:14px;border-radius:3px;border:1.5px solid #c8c8c0;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#fff}
+.ms-cb.checked{background:#2563eb;border-color:#2563eb}
+.ms-cb.checked-then{background:#7c3aed;border-color:#7c3aed}
+.ms-cb svg{display:none}
+.ms-cb.checked svg,.ms-cb.checked-then svg{display:block}
+.ms-name{font-size:12px;color:#1a1a1a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-sal{font-size:11px;color:#888;flex-shrink:0}
+.ms-count{font-size:11px;color:#888;padding:5px 9px;border-top:1px solid #e5e5e0;background:#fafaf8}
+.rule-sub{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.06em;padding-top:6px;border-top:1px solid #f0f0eb;margin-top:2px}
+.pool-bar{padding:4px 0.6rem;border-bottom:1px solid #e5e5e0;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fafaf8}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">MMA DraftKings Lineup Builder</div>
+      <div class="app-sub">Bulk generation · conflict protection · player rules · conditional rules</div>
+    </div>
+    <span class="cap-tag">$50,000 cap</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="phdr">
+      <span class="ptitle">Player Pool</span>
+      <button class="slink" onclick="loadSample()">load sample</button>
+    </div>
+    <div class="upload-zone" onclick="document.getElementById('csvIn').click()">
+      <input type="file" id="csvIn" accept=".csv" onchange="handleCSV(event)" style="display:none"/>
+      <div style="font-size:12px;color:#555">Upload DraftKings CSV</div>
+      <div style="font-size:11px;color:#aaa;margin-top:3px">Reads Game Info column automatically</div>
+    </div>
+    <div class="search-row">
+      <input class="si" type="text" placeholder="Search fighters..." oninput="renderPlayers()" id="searchIn"/>
+    </div>
+    <div class="pool-bar">
+      <div style="font-size:11px;color:#aaa" id="poolStats">0 locked · 0 excluded</div>
+      <div style="display:flex;gap:6px">
+        <button class="slink" onclick="clearLocks()">clear locks</button>
+        <span style="color:#ccc;font-size:11px">·</span>
+        <button class="slink" onclick="clearExclusions()">clear excluded</button>
+      </div>
+    </div>
+    <div class="player-list" id="playerList"><div class="empty-state">Upload a CSV or load sample data</div></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="tabs-row">
+      <div class="tab active" id="tab-manual" onclick="switchTab('manual')">Manual</div>
+      <div class="tab" id="tab-bulk" onclick="switchTab('bulk')">Bulk generate</div>
+      <div class="tab" id="tab-matchups" onclick="switchTab('matchups')">Matchups <span id="mBadge" style="font-size:10px;background:#fde8e8;color:#b53a3a;padding:1px 6px;border-radius:8px;margin-left:3px;display:none">0</span></div>
+      <div class="tab" id="tab-rules" onclick="switchTab('rules')">Rules <span id="rBadge" style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:8px;margin-left:3px;display:none">0</span></div>
+    </div>
+
+    <div id="manualPanel" class="pon">
+      <div class="slots-wrap" id="lineupSlots"></div>
+      <div class="footer">
+        <div class="cap-wrap">
+          <div class="cap-lbl"><span>Used: <strong id="salUsed">$0</strong></span><span id="salLeft">$50,000 remaining</span></div>
+          <div class="cap-bar"><div class="cap-fill cap-ok" id="capFill" style="width:0%"></div></div>
+        </div>
+        <div class="proj-box"><div class="proj-lbl">Projected</div><div class="proj-val" id="projTotal">0.0</div></div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn-sm" onclick="clearLineup()">Clear</button>
+          <button class="btn-sm" onclick="exportSingle()">Export ↓</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bulkPanel" class="poff">
+      <div class="trow">
+        <label class="toggle"><input type="checkbox" id="conflictToggle" checked/><span class="tsl"></span></label>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:#1a1a1a">No opponent stacking</div>
+          <div style="font-size:11px;color:#888">Fighters facing each other won't share a lineup · <span id="pairCount">0 bout pairs</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Generation settings</div>
+        <div class="row"><span class="lbl">Number of lineups</span><input class="num-input" type="number" id="numLineups" value="20" min="1" max="600" step="1"/><span style="font-size:11px;color:#aaa">max 600</span></div>
+        <div class="row"><span class="lbl">Salary cap min</span><input class="num-input" type="number" id="capMin" value="45000" min="0" max="50000" step="100"/><span style="font-size:11px;color:#aaa">$</span></div>
+        <div class="row"><span class="lbl">Salary cap max</span><input class="num-input" type="number" id="capMax" value="50000" min="0" max="50000" step="100"/><span style="font-size:11px;color:#aaa">$</span></div>
+        <div class="row"><span class="lbl">Max player exposure</span><input class="num-input" type="number" id="maxExp" value="100" min="1" max="100" step="1"/><span style="font-size:11px;color:#aaa">%</span></div>
+        <div class="row"><span class="lbl">Min unique players</span><input class="num-input" type="number" id="minUniq" value="2" min="1" max="6" step="1"/><span style="font-size:11px;color:#aaa">vs previous</span></div>
+        <div class="row"><button class="gen-btn" id="genBtn" onclick="generateLineups()">Generate lineups</button><span style="font-size:11px;color:#666" id="genStatus"></span></div>
+      </div>
+      <div class="locked-row" id="lockedSummary"><span style="font-size:11px;color:#aaa">Locked players appear in every lineup.</span></div>
+      <div class="prog-row" id="progRow" style="display:none">
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+        <span style="font-size:11px;color:#666;min-width:50px;text-align:right" id="progLbl">0 / 0</span>
+      </div>
+      <div class="gen-list" id="genList"><div class="empty-state">Configure settings and click Generate</div></div>
+      <div class="bulk-footer">
+        <span style="font-size:12px;color:#666" id="genSummary"></span>
+        <div style="display:flex;gap:5px;align-items:center">
+          <button class="btn-sm" onclick="clearGenerated()">Clear</button>
+          <button class="exp-btn" id="expAllBtn" onclick="exportAll()" disabled>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 11v2h10v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="expAllLbl">Export all</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="matchupsPanel" class="poff">
+      <div class="section">
+        <div class="section-title">Fetch from internet</div>
+        <div class="row"><input id="apiKeyIn" class="mi" type="password" style="max-width:270px" placeholder="Anthropic API key (sk-ant-...)"/><span style="font-size:11px;color:#aaa;white-space:nowrap">your key, never stored</span></div>
+        <div class="row"><input id="eventIn" class="mi" style="max-width:220px" placeholder="e.g. UFC 300, UFC Fight Night"/><button class="btn-sm" id="fetchBtn" onclick="fetchMatchups()">Fetch bouts</button></div>
+        <div id="aiStatus" class="ai-status">Enter your API key and event name, then click Fetch.</div>
+      </div>
+      <div class="section">
+        <div class="section-title">Add manually</div>
+        <div class="row"><input id="f1In" class="mi" placeholder="Fighter 1"/><span style="font-size:12px;color:#aaa;flex-shrink:0">vs</span><input id="f2In" class="mi" placeholder="Fighter 2"/><button class="btn-sm" onclick="addMatchupManual()">Add</button></div>
+      </div>
+      <div style="padding:0.5rem 0.75rem;border-bottom:1px solid #e5e5e0;display:flex;align-items:center;justify-content:space-between;background:#fafaf8">
+        <span style="font-size:11px;color:#666" id="mCount">0 bout pairs</span>
+        <button class="slink" onclick="clearMatchups()">clear all</button>
+      </div>
+      <div id="matchupList" style="overflow-y:auto;max-height:400px;padding:0.5rem 0.75rem;display:flex;flex-direction:column;gap:6px"><div class="empty-state">No matchups added yet.</div></div>
+    </div>
+
+    <div id="rulesPanel" class="poff" style="display:none;flex-direction:column">
+      <div style="padding:0.6rem 0.875rem;border-bottom:1px solid #e5e5e0;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;background:#fafaf8">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1a1a1a">Fighter rules</div>
+          <div style="font-size:11px;color:#888;margin-top:1px">Applied during bulk generation · up to 10 rules total</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-sm" id="addBasicBtn" onclick="addRule('basic')">+ Basic rule</button>
+          <button class="btn-sm" id="addCondBtn" onclick="addRule('conditional')">+ Conditional rule</button>
+        </div>
+      </div>
+      <div class="rules-outer" id="rulesList">
+        <div class="empty-state">No rules yet. Add a basic rule or a conditional IF/THEN rule.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const CAP=50000;
+const SLOTS=[{pos:'F1',label:'F'},{pos:'F2',label:'F'},{pos:'F3',label:'F'},{pos:'F4',label:'F'},{pos:'F5',label:'F'},{pos:'F6',label:'F'}];
+let players=[],lineup={},lockedIds=new Set(),excludedIds=new Set(),generatedLineups=[],selectedGen=-1,matchupPairs=[],rules=[],expTimer=null,ruleIdCtr=0;
+
+function normName(n){return n.toLowerCase().replace(/[^a-z0-9]/g,'');}
+function parseGameInfo(raw){
+  if(!raw)return null;
+  const s=raw.replace(/\d{2}\/\d{2}\/\d{4}.*/,'').trim();
+  const p=s.split(/\s+vs\.?\s+/i);
+  if(p.length===2){const a=p[0].trim(),b=p[1].trim();if(a&&b)return[a,b];}
+  return null;
+}
+function addPairIfNew(a,b){
+  const na=normName(a),nb=normName(b);
+  if(!na||!nb||na===nb)return false;
+  if(matchupPairs.some(([x,y])=>(normName(x)===na&&normName(y)===nb)||(normName(x)===nb&&normName(y)===na)))return false;
+  matchupPairs.push([a,b]);return true;
+}
+function getConflictMap(){
+  const map={};
+  matchupPairs.forEach(([a,b])=>{const na=normName(a),nb=normName(b);if(!map[na])map[na]=new Set();if(!map[nb])map[nb]=new Set();map[na].add(nb);map[nb].add(na);});
+  return map;
+}
+function conflictCheck(pA,pB){
+  if(!document.getElementById('conflictToggle').checked)return false;
+  const map=getConflictMap(),na=normName(pA.name),nb=normName(pB.name);
+  return!!(map[na]&&map[na].has(nb));
+}
+function assignmentConflict(assignment,candidate){
+  if(!document.getElementById('conflictToggle').checked)return false;
+  const map=getConflictMap(),nc=normName(candidate.name);
+  return Object.values(assignment).filter(Boolean).some(p=>{const np=normName(p.name);return(map[np]&&map[np].has(nc))||(map[nc]&&map[nc].has(np));});
+}
+function playerConflictInLineup(p,lineupIds){
+  if(!document.getElementById('conflictToggle').checked)return false;
+  const map=getConflictMap(),np=normName(p.name);
+  return players.filter(x=>lineupIds.includes(x.id)).some(lp=>{const nlp=normName(lp.name);return(map[np]&&map[np].has(nlp))||(map[nlp]&&map[nlp].has(np));});
+}
+function switchTab(tab){
+  ['manual','bulk','matchups','rules'].forEach(t=>{
+    const panel=document.getElementById(t+'Panel');
+    const isActive=t===tab;
+    if(t==='rules'){panel.style.display=isActive?'flex':'none';}
+    else{panel.className=isActive?'pon':'poff';}
+    document.getElementById('tab-'+t).classList.toggle('active',isActive);
+  });
+}
+function loadSample(){
+  players=[
+    {id:1,name:'Islam Makhachev',team:'Main',salary:10000,proj:44.2,gameInfo:'Islam Makhachev vs Alexander Volkanovski 03/01/2026 08:00PM ET'},
+    {id:2,name:'Alexander Volkanovski',team:'Main',salary:9600,proj:41.8,gameInfo:'Islam Makhachev vs Alexander Volkanovski 03/01/2026 08:00PM ET'},
+    {id:3,name:'Leon Edwards',team:'Main',salary:9200,proj:39.5,gameInfo:'Leon Edwards vs Kamaru Usman 03/01/2026 08:00PM ET'},
+    {id:4,name:'Kamaru Usman',team:'Main',salary:8800,proj:36.1,gameInfo:'Leon Edwards vs Kamaru Usman 03/01/2026 08:00PM ET'},
+    {id:5,name:'Max Holloway',team:'Main',salary:8800,proj:35.9,gameInfo:'Max Holloway vs Conor McGregor 03/01/2026 08:00PM ET'},
+    {id:6,name:'Conor McGregor',team:'Main',salary:8600,proj:34.5,gameInfo:'Max Holloway vs Conor McGregor 03/01/2026 08:00PM ET'},
+    {id:7,name:'Dustin Poirier',team:'Main',salary:8400,proj:33.7,gameInfo:'Dustin Poirier vs Justin Gaethje 03/01/2026 08:00PM ET'},
+    {id:8,name:'Justin Gaethje',team:'Main',salary:8200,proj:31.4,gameInfo:'Dustin Poirier vs Justin Gaethje 03/01/2026 08:00PM ET'},
+    {id:9,name:'Charles Oliveira',team:'Main',salary:8000,proj:30.2,gameInfo:'Charles Oliveira vs Michael Chandler 03/01/2026 08:00PM ET'},
+    {id:10,name:'Michael Chandler',team:'Main',salary:7800,proj:28.9,gameInfo:'Charles Oliveira vs Michael Chandler 03/01/2026 08:00PM ET'},
+    {id:11,name:'Colby Covington',team:'Main',salary:7600,proj:27.8,gameInfo:'Colby Covington vs Jorge Masvidal 03/01/2026 08:00PM ET'},
+    {id:12,name:'Jorge Masvidal',team:'Prelim',salary:7200,proj:25.1,gameInfo:'Colby Covington vs Jorge Masvidal 03/01/2026 08:00PM ET'},
+    {id:13,name:'Rafael Fiziev',team:'Main',salary:7400,proj:26.4,gameInfo:'Rafael Fiziev vs Yair Rodriguez 03/01/2026 08:00PM ET'},
+    {id:14,name:'Yair Rodriguez',team:'Main',salary:7200,proj:24.8,gameInfo:'Rafael Fiziev vs Yair Rodriguez 03/01/2026 08:00PM ET'},
+    {id:15,name:'Beneil Dariush',team:'Main',salary:7000,proj:23.7,gameInfo:'Beneil Dariush vs Dan Hooker 03/01/2026 08:00PM ET'},
+    {id:16,name:'Dan Hooker',team:'Main',salary:6800,proj:22.1,gameInfo:'Beneil Dariush vs Dan Hooker 03/01/2026 08:00PM ET'},
+    {id:17,name:'Tony Ferguson',team:'Prelim',salary:6400,proj:20.3,gameInfo:'Tony Ferguson vs Nate Diaz 03/01/2026 08:00PM ET'},
+    {id:18,name:'Nate Diaz',team:'Prelim',salary:6000,proj:18.1,gameInfo:'Tony Ferguson vs Nate Diaz 03/01/2026 08:00PM ET'}
+  ];
+  matchupPairs=[];
+  players.forEach(p=>{if(p.gameInfo){const pair=parseGameInfo(p.gameInfo);if(pair)addPairIfNew(pair[0],pair[1]);}});
+  renderPlayers();renderMatchups();renderRules();
+}
+function parseCSVRow(line){
+  const res=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){res.push(cur.trim());cur='';}else{cur+=c;}}
+  res.push(cur.trim());return res;
+}
+function handleCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    const lines=ev.target.result.trim().split('\n');
+    const headers=parseCSVRow(lines[0]).map(h=>h.toLowerCase().trim());
+    const ni=headers.findIndex(h=>h==='name'||h.includes('name'));
+    const si=headers.findIndex(h=>h==='salary'||h.includes('sal'));
+    const pi=headers.findIndex(h=>h==='avgpointspergame'||h.includes('proj')||h.includes('fpts'));
+    const ti=headers.findIndex(h=>h==='teamabbrev'||h==='team'||h.startsWith('team'));
+    const gi=headers.findIndex(h=>h==='game info'||h==='gameinfo'||h.includes('game info')||h.includes('gameinfo')||h==='game+info');
+    const oi=headers.findIndex(h=>h==='opp'||h==='opponent');
+    let newPairs=0;players=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=parseCSVRow(lines[i]);if(!cols[ni])continue;
+      const p={id:i,name:cols[ni],team:cols[ti]||'',salary:parseInt((cols[si]||'').replace(/[$,]/g,''))||0,proj:parseFloat(cols[pi])||0};
+      if(gi>=0&&cols[gi]){const pair=parseGameInfo(cols[gi]);if(pair&&addPairIfNew(pair[0],pair[1]))newPairs++;}
+      else if(oi>=0&&cols[oi]){if(addPairIfNew(p.name,cols[oi].trim()))newPairs++;}
+      players.push(p);
+    }
+    renderPlayers();renderMatchups();renderRules();
+    if(newPairs>0){const el=document.getElementById('aiStatus');el.className='ai-status ai-ok';el.textContent=`Imported ${newPairs} bout pair${newPairs!==1?'s':''} from Game Info.`;}
+  };
+  reader.readAsText(file);
+}
+function renderPlayers(){
+  const list=document.getElementById('playerList');
+  const search=document.getElementById('searchIn').value.toLowerCase();
+  if(!players.length){list.innerHTML='<div class="empty-state">Upload a CSV or load sample data</div>';return;}
+  const lineupIds=Object.values(lineup).filter(Boolean).map(p=>p.id);
+  const filtered=players.filter(p=>!search||p.name.toLowerCase().includes(search));
+  list.innerHTML=filtered.map(p=>{
+    const inL=lineupIds.includes(p.id),locked=lockedIds.has(p.id),excluded=excludedIds.has(p.id),conflict=playerConflictInLineup(p,lineupIds);
+    let rc='prow';
+    if(conflict)rc+=' conflict';else if(locked)rc+=' locked';else if(excluded)rc+=' excluded';else if(inL)rc+=' in-lineup';
+    return`<div class="${rc}" onclick="selectPlayer(${p.id})">
+      <span class="pbadge">F</span>
+      <div class="pinfo"><div class="pname">${p.name}${locked?'<span class="bsm lkb">locked</span>':''}${excluded?'<span class="bsm exb">excl</span>':''}${conflict?'<span class="bsm cfb">opp</span>':''}</div><div class="pmeta">${p.team}</div></div>
+      <div style="text-align:right;flex-shrink:0;margin-right:4px"><div style="font-size:12px;font-weight:500">$${p.salary.toLocaleString()}</div><div style="font-size:11px;color:#888">${p.proj>0?p.proj.toFixed(1)+' pts':''}</div></div>
+      <button class="btn-icon${locked?' lock-on':''}" onclick="event.stopPropagation();toggleLock(${p.id})">${locked?'unlock':'lock'}</button>
+      <button class="btn-icon${excluded?' excl-on':''}" onclick="event.stopPropagation();toggleExclude(${p.id})">${excluded?'include':'excl'}</button>
+    </div>`;
+  }).join('')||'<div class="empty-state">No fighters found</div>';
+  document.getElementById('poolStats').textContent=`${lockedIds.size} locked · ${excludedIds.size} excluded`;
+}
+function toggleLock(id){if(lockedIds.has(id)){lockedIds.delete(id);}else{lockedIds.add(id);excludedIds.delete(id);}renderPlayers();updateLockedSummary();}
+function toggleExclude(id){if(excludedIds.has(id)){excludedIds.delete(id);}else{excludedIds.add(id);lockedIds.delete(id);const k=Object.keys(lineup).find(k=>lineup[k]&&lineup[k].id===id);if(k){delete lineup[k];renderLineup();}}renderPlayers();updateLockedSummary();}
+function clearLocks(){lockedIds.clear();renderPlayers();updateLockedSummary();}
+function clearExclusions(){excludedIds.clear();renderPlayers();updateLockedSummary();}
+function updateLockedSummary(){
+  const locked=players.filter(p=>lockedIds.has(p.id));
+  const el=document.getElementById('lockedSummary');
+  if(!locked.length){el.innerHTML='<span style="font-size:11px;color:#aaa">Locked players appear in every lineup.</span>';return;}
+  el.innerHTML='<span style="font-size:11px;color:#666;margin-right:4px">Locked:</span>'+locked.map(p=>`<span class="lchip">${p.name}</span>`).join('');
+}
+function selectPlayer(id){
+  const player=players.find(p=>p.id===id);if(!player||excludedIds.has(id))return;
+  const lineupIds=Object.values(lineup).filter(Boolean).map(p=>p.id);
+  if(lineupIds.includes(id)){const k=Object.keys(lineup).find(k=>lineup[k]&&lineup[k].id===id);if(k){delete lineup[k];renderPlayers();renderLineup();}return;}
+  if(playerConflictInLineup(player,lineupIds)){alert(`${player.name} is fighting someone already in your lineup.`);return;}
+  const openSlot=SLOTS.find(s=>!lineup[s.pos]);if(!openSlot){alert('Lineup is full.');return;}
+  lineup[openSlot.pos]=player;renderPlayers();renderLineup();
+}
+function removeFromSlot(sp){delete lineup[sp];renderPlayers();renderLineup();}
+function clearLineup(){lineup={};renderPlayers();renderLineup();}
+function renderLineup(){
+  document.getElementById('lineupSlots').innerHTML=SLOTS.map(s=>{
+    const p=lineup[s.pos];
+    if(p){const locked=lockedIds.has(p.id);return`<div class="slot" style="${locked?'border-color:#4a9e38':''}"><span class="pbadge" style="min-width:22px">${s.label}</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${p.name}${locked?'<span class="bsm lkb" style="margin-left:4px">locked</span>':''}</div><div style="font-size:11px;color:#888">${p.team} · ${p.proj>0?p.proj.toFixed(1)+' pts':''}</div></div><div style="font-size:12px;color:#666;flex-shrink:0">$${p.salary.toLocaleString()}</div><span class="slot-rm" onclick="removeFromSlot('${s.pos}')">✕</span></div>`;}
+    return`<div class="slot"><span class="pbadge" style="min-width:22px;opacity:0.3">${s.label}</span><span class="slot-empty">Empty</span></div>`;
+  }).join('');
+  const totalSal=Object.values(lineup).reduce((s,p)=>s+(p?p.salary:0),0);
+  const totalProj=Object.values(lineup).reduce((s,p)=>s+(p?p.proj:0),0);
+  const pct=Math.min(100,(totalSal/CAP)*100),rem=CAP-totalSal;
+  document.getElementById('salUsed').textContent='$'+totalSal.toLocaleString();
+  document.getElementById('salLeft').textContent=rem>=0?`$${rem.toLocaleString()} remaining`:`$${Math.abs(rem).toLocaleString()} over cap!`;
+  document.getElementById('projTotal').textContent=totalProj.toFixed(1);
+  const fill=document.getElementById('capFill');fill.style.width=pct+'%';fill.className='cap-fill '+(rem<0?'cap-over':pct>85?'cap-warn':'cap-ok');
+}
+function checkAllRules(assignment){
+  const assignedIds=new Set(Object.values(assignment).filter(Boolean).map(p=>p.id));
+  for(const rule of rules){
+    if(rule.kind==='basic'){
+      if(!rule.fighters.length)continue;
+      const count=rule.fighters.filter(id=>assignedIds.has(id)).length;
+      if(rule.type==='at_least'&&count<rule.n)return false;
+      if(rule.type==='at_most'&&count>rule.n)return false;
+    }else{
+      if(!rule.ifFighters.length||!rule.thenFighters.length)continue;
+      const ifCount=rule.ifFighters.filter(id=>assignedIds.has(id)).length;
+      const condMet=rule.ifCond==='has'?ifCount>0:ifCount===0;
+      if(condMet){
+        const thenCount=rule.thenFighters.filter(id=>assignedIds.has(id)).length;
+        if(rule.thenType==='at_least'&&thenCount<rule.thenN)return false;
+        if(rule.thenType==='at_most'&&thenCount>rule.thenN)return false;
+      }
+    }
+  }
+  return true;
+}
+function tryBuildLineup(lockedPlayers,allPlayers,existingLineups,minUniq,maxExpPct,totalTarget,capMin,capMax){
+  const pool=allPlayers.filter(p=>!excludedIds.has(p.id));
+  const maxExp=Math.ceil((maxExpPct/100)*totalTarget);
+  const expCount={};existingLineups.forEach(l=>Object.values(l).filter(Boolean).forEach(p=>{expCount[p.id]=(expCount[p.id]||0)+1;}));
+  const eligible=p=>!((expCount[p.id]||0)>=maxExp&&existingLineups.length>0&&maxExpPct<100);
+  const assignment={};const usedIds=new Set();
+  for(const lp of lockedPlayers){const slot=SLOTS.find(s=>!assignment[s.pos]);if(!slot)return null;assignment[slot.pos]=lp;usedIds.add(lp.id);}
+  if(lockedPlayers.some((a,i)=>lockedPlayers.slice(i+1).some(b=>conflictCheck(a,b))))return null;
+  const remaining=SLOTS.filter(s=>!assignment[s.pos]);
+  const shuffled=[...pool].sort(()=>Math.random()-0.5);
+  function fill(idx){
+    if(idx===remaining.length){
+      const sal=Object.values(assignment).reduce((s,p)=>s+(p?p.salary:0),0);
+      if(sal<capMin||sal>capMax)return false;
+      return checkAllRules(assignment);
+    }
+    const candidates=shuffled.filter(p=>!usedIds.has(p.id)&&eligible(p)&&!assignmentConflict(assignment,p));
+    for(const c of candidates){
+      const testSal=Object.values(assignment).reduce((s,p)=>s+(p?p.salary:0),0)+c.salary;
+      if(testSal>capMax)continue;
+      const slotsLeft=remaining.length-idx-1;
+      const minSalLeft=shuffled.filter(p=>!usedIds.has(p.id)&&p.id!==c.id).map(p=>p.salary).sort((a,b)=>a-b).slice(0,slotsLeft).reduce((s,v)=>s+v,0);
+      if(testSal+minSalLeft<capMin&&slotsLeft>0)continue;
+      assignment[remaining[idx].pos]=c;usedIds.add(c.id);
+      if(fill(idx+1))return true;
+      delete assignment[remaining[idx].pos];usedIds.delete(c.id);
+    }
+    return false;
+  }
+  if(!fill(0))return null;
+  if(existingLineups.length>0&&minUniq>1){
+    const lastIds=new Set(Object.values(existingLineups[existingLineups.length-1]).filter(Boolean).map(p=>p.id));
+    if(Object.values(assignment).filter(Boolean).map(p=>p.id).filter(id=>!lastIds.has(id)).length<minUniq)return null;
+  }
+  return assignment;
+}
+async function generateLineups(){
+  const locked=players.filter(p=>lockedIds.has(p.id));
+  const n=Math.min(600,Math.max(1,parseInt(document.getElementById('numLineups').value)||20));
+  const capMin=Math.max(0,parseInt(document.getElementById('capMin').value)||45000);
+  const capMax=Math.min(CAP,parseInt(document.getElementById('capMax').value)||CAP);
+  const maxExpPct=Math.min(100,Math.max(1,parseInt(document.getElementById('maxExp').value)||100));
+  const minUniq=Math.min(6,Math.max(0,parseInt(document.getElementById('minUniq').value)||2));
+  if(!players.length){alert('Load players first.');return;}
+  if(capMin>capMax){alert('Cap min must be less than cap max.');return;}
+  const btn=document.getElementById('genBtn');btn.disabled=true;
+  document.getElementById('genStatus').textContent='Generating...';
+  document.getElementById('progRow').style.display='flex';
+  generatedLineups=[];renderGenerated();setExpBtn('disabled');
+  let attempts=0,i=0;const maxAttempts=n*200;
+  const pf=document.getElementById('progFill'),pl=document.getElementById('progLbl');
+  async function runBatch(){
+    const until=Math.min(n,i+15);
+    while(i<until&&attempts<maxAttempts){attempts++;const a=tryBuildLineup(locked,players,generatedLineups,minUniq,maxExpPct,n,capMin,capMax);if(a){generatedLineups.push(a);i++;}}
+    pf.style.width=Math.round((i/n)*100)+'%';pl.textContent=`${i} / ${n}`;
+    if(i<n&&attempts<maxAttempts){await new Promise(r=>setTimeout(r,0));runBatch();}
+    else{btn.disabled=false;document.getElementById('genStatus').textContent=`Done: ${i} lineup${i!==1?'s':''}`;document.getElementById('genSummary').textContent=`${i} lineup${i!==1?'s':''} generated`;renderGenerated();if(i>0)setExpBtn('ready');}
+  }
+  runBatch();
+}
+function renderGenerated(){
+  const list=document.getElementById('genList');
+  if(!generatedLineups.length){list.innerHTML='<div class="empty-state">Configure settings and click Generate</div>';return;}
+  list.innerHTML=generatedLineups.map((l,idx)=>{
+    const names=SLOTS.map(s=>l[s.pos]?l[s.pos].name:'—').join(', ');
+    const sal=Object.values(l).reduce((s,p)=>s+(p?p.salary:0),0);
+    const proj=Object.values(l).reduce((s,p)=>s+(p?p.proj:0),0);
+    return`<div class="grow${selectedGen===idx?' sel':''}" onclick="previewLineup(${idx})"><span class="gnum">#${idx+1}</span><span class="gnames">${names}</span><div class="gstats"><div style="font-weight:500">${proj.toFixed(1)} pts</div><div>$${sal.toLocaleString()}</div></div></div>`;
+  }).join('');
+}
+function previewLineup(idx){selectedGen=idx;const l=generatedLineups[idx];lineup={};Object.keys(l).forEach(k=>{lineup[k]=l[k];});renderLineup();renderGenerated();switchTab('manual');}
+function clearGenerated(){generatedLineups=[];selectedGen=-1;document.getElementById('genStatus').textContent='';document.getElementById('genSummary').textContent='';document.getElementById('progFill').style.width='0%';document.getElementById('progLbl').textContent='0 / 0';setExpBtn('disabled');renderGenerated();}
+function setExpBtn(state){
+  const btn=document.getElementById('expAllBtn'),lbl=document.getElementById('expAllLbl');
+  btn.disabled=state==='disabled';btn.className='exp-btn'+(state==='ok'?' ok':'');
+  lbl.textContent=state==='ok'?'Downloaded!':'Export all';
+  if(expTimer)clearTimeout(expTimer);
+  if(state==='ok')expTimer=setTimeout(()=>setExpBtn(generatedLineups.length?'ready':'disabled'),3000);
+}
+function buildCSV(rows){return rows.map(r=>r.map(v=>'"'+String(v===null||v===undefined?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');}
+function exportAll(){
+  if(!generatedLineups.length)return;
+  const rows=[['Lineup',...SLOTS.map(s=>s.label),'Salary','Projection']];
+  generatedLineups.forEach((l,i)=>{const sal=Object.values(l).reduce((s,p)=>s+(p?p.salary:0),0);const proj=Object.values(l).reduce((s,p)=>s+(p?p.proj:0),0);rows.push([i+1,...SLOTS.map(s=>l[s.pos]?l[s.pos].name:''),sal,proj.toFixed(1)]);});
+  const csv=buildCSV(rows);
+  try{const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='dk_mma_lineups.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),200);setExpBtn('ok');}catch(e){alert('Export failed. Try a smaller number of lineups.');}
+}
+function exportSingle(){
+  const rows=[['Position','Name','Team','Salary','Projection']];
+  SLOTS.forEach(s=>{const p=lineup[s.pos];rows.push([s.label,p?p.name:'',p?p.team:'',p?p.salary:'',p?p.proj:'']);});
+  const csv=buildCSV(rows);
+  try{const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='dk_mma_lineup.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),200);}catch(e){}
+}
+function addMatchupManual(){
+  const a=document.getElementById('f1In').value.trim(),b=document.getElementById('f2In').value.trim();
+  if(!a||!b){alert('Enter both names.');return;}
+  if(!addPairIfNew(a,b)){alert('Matchup already exists.');return;}
+  document.getElementById('f1In').value='';document.getElementById('f2In').value='';
+  renderMatchups();renderPlayers();
+}
+function removeMatchup(idx){matchupPairs.splice(idx,1);renderMatchups();renderPlayers();}
+function clearMatchups(){matchupPairs=[];renderMatchups();renderPlayers();}
+function renderMatchups(){
+  const count=matchupPairs.length;
+  document.getElementById('mCount').textContent=`${count} bout pair${count!==1?'s':''}`;
+  document.getElementById('pairCount').textContent=`${count} bout pair${count!==1?'s':''}`;
+  const badge=document.getElementById('mBadge');badge.style.display=count>0?'inline':'none';badge.textContent=count;
+  const list=document.getElementById('matchupList');
+  if(!count){list.innerHTML='<div class="empty-state">No matchups added yet.</div>';return;}
+  list.innerHTML=matchupPairs.map(([a,b],i)=>`<div class="mc"><span class="mn">${a}</span><span class="mvs">vs</span><span class="mn">${b}</span><span class="mrm" onclick="removeMatchup(${i})">✕</span></div>`).join('');
+}
+async function fetchMatchups(){
+  const eventName=document.getElementById('eventIn').value.trim();
+  const apiKey=document.getElementById('apiKeyIn').value.trim();
+  if(!apiKey){alert('Enter your Anthropic API key first.');return;}
+  if(!eventName){alert('Enter an event name.');return;}
+  const btn=document.getElementById('fetchBtn'),statusEl=document.getElementById('aiStatus');
+  btn.disabled=true;statusEl.className='ai-status';statusEl.textContent='Fetching via AI...';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:`Search for the full fight card for "${eventName}" MMA event. Return ONLY a JSON array of matchup pairs, no preamble, no markdown. Format: [["Fighter A","Fighter B"],...].`}]})});
+    const data=await resp.json();
+    const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.replace(/```json|```/g,'').trim().match(/\[[\s\S]*\]/);
+    if(!match)throw new Error('No matchup data found');
+    const pairs=JSON.parse(match[0]);
+    if(!Array.isArray(pairs)||!pairs.length)throw new Error('Empty matchup list');
+    let added=0;pairs.forEach(([a,b])=>{if(a&&b&&addPairIfNew(a,b))added++;});
+    statusEl.className='ai-status ai-ok';statusEl.textContent=`Added ${added} bout pair${added!==1?'s':''}.`;
+    renderMatchups();renderPlayers();
+  }catch(err){statusEl.className='ai-status ai-err';statusEl.textContent=`Error: ${err.message}.`;}
+  finally{btn.disabled=false;}
+}
+function addRule(kind){
+  if(rules.length>=10){alert('Maximum 10 rules allowed.');return;}
+  const id=++ruleIdCtr;
+  if(kind==='basic'){rules.push({id,kind:'basic',type:'at_least',n:1,fighters:[]});}
+  else{rules.push({id,kind:'conditional',ifCond:'has',ifFighters:[],thenType:'at_least',thenN:1,thenFighters:[]});}
+  renderRules();
+}
+function removeRule(id){rules=rules.filter(r=>r.id!==id);renderRules();}
+function updateRule(id,field,val){
+  const r=rules.find(r=>r.id===id);if(!r)return;
+  if(field==='type')r.type=val;else if(field==='n')r.n=Math.min(6,Math.max(1,parseInt(val)||1));
+  else if(field==='ifCond')r.ifCond=val;else if(field==='thenType')r.thenType=val;
+  else if(field==='thenN')r.thenN=Math.min(5,Math.max(1,parseInt(val)||1));
+}
+function toggleFighterInRule(ruleId,pid,section){
+  const r=rules.find(r=>r.id===ruleId);if(!r)return;
+  const arr=section==='if'?r.ifFighters:section==='then'?r.thenFighters:r.fighters;
+  const idx=arr.indexOf(pid);
+  if(idx>=0)arr.splice(idx,1);else arr.push(pid);
+  renderRules();
+}
+function renderMultiSelect(ruleId,section,selectedIds,colorClass){
+  if(!players.length)return`<div class="multi-select-wrap"><div style="font-size:12px;color:#aaa;padding:8px">Load fighters first</div></div>`;
+  const rows=players.map(p=>{
+    const isSel=selectedIds.includes(p.id);
+    return`<div class="ms-option${isSel?' ms-selected':''}" onclick="toggleFighterInRule(${ruleId},${p.id},'${section}')">
+      <div class="ms-cb${isSel?' '+colorClass:''}"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <span class="ms-name">${p.name}</span><span class="ms-sal">$${p.salary.toLocaleString()}</span>
+    </div>`;
+  }).join('');
+  return`<div class="multi-select-wrap"><div class="multi-select-scroll">${rows}</div><div class="ms-count">${selectedIds.length} of ${players.length} selected</div></div>`;
+}
+function renderRules(){
+  const total=rules.length;
+  const badge=document.getElementById('rBadge');badge.style.display=total>0?'inline':'none';badge.textContent=total;
+  document.getElementById('addBasicBtn').disabled=total>=10;
+  document.getElementById('addCondBtn').disabled=total>=10;
+  const list=document.getElementById('rulesList');
+  if(!total){list.innerHTML='<div class="empty-state">No rules yet. Add a basic rule or a conditional IF/THEN rule.</div>';return;}
+  list.innerHTML=rules.map((rule,idx)=>{
+    if(rule.kind==='basic'){
+      return`<div class="rule-card"><div class="rule-head"><span class="rule-type-badge rtb-basic">Basic</span><span style="font-size:12px;color:#666">Rule ${idx+1}</span><span style="margin-left:auto;font-size:11px;color:#aaa">${rule.fighters.length} selected</span><span class="mrm" onclick="removeRule(${rule.id})">✕</span></div><div class="rule-body"><div class="row"><select class="rsel" onchange="updateRule(${rule.id},'type',this.value)"><option value="at_least"${rule.type==='at_least'?' selected':''}>At least</option><option value="at_most"${rule.type==='at_most'?' selected':''}>At most</option></select><input type="number" class="rnum" min="1" max="6" value="${rule.n}" onchange="updateRule(${rule.id},'n',this.value)"/><span style="font-size:12px;color:#555">of these fighters per lineup</span></div>${renderMultiSelect(rule.id,'basic',rule.fighters,'checked')}</div></div>`;
+    }else{
+      return`<div class="rule-card"><div class="rule-head"><span class="rule-type-badge rtb-cond">Conditional</span><span style="font-size:12px;color:#666">Rule ${idx+1}</span><span style="margin-left:auto;font-size:11px;color:#aaa">${rule.ifFighters.length} IF · ${rule.thenFighters.length} THEN</span><span class="mrm" onclick="removeRule(${rule.id})">✕</span></div><div class="rule-body"><div class="rule-sub">IF condition</div><div class="row"><span style="font-size:12px;color:#555">If lineup</span><select class="rsel" onchange="updateRule(${rule.id},'ifCond',this.value)"><option value="has"${rule.ifCond==='has'?' selected':''}>has</option><option value="does_not_have"${rule.ifCond==='does_not_have'?' selected':''}>does not have</option></select><span style="font-size:12px;color:#555">any of:</span></div>${renderMultiSelect(rule.id,'if',rule.ifFighters,'checked')}<div class="rule-sub">THEN constraint</div><div class="row"><span style="font-size:12px;color:#555">Then use</span><select class="rsel" onchange="updateRule(${rule.id},'thenType',this.value)"><option value="at_least"${rule.thenType==='at_least'?' selected':''}>at least</option><option value="at_most"${rule.thenType==='at_most'?' selected':''}>at most</option></select><input type="number" class="rnum" min="1" max="5" value="${rule.thenN}" onchange="updateRule(${rule.id},'thenN',this.value)"/><span style="font-size:12px;color:#555">of:</span></div>${renderMultiSelect(rule.id,'then',rule.thenFighters,'checked-then')}</div></div>`;
+    }
+  }).join('');
+}
+renderLineup();renderGenerated();renderMatchups();renderRules();
+</script>
+</body>
+</html>
